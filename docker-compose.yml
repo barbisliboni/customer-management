@@ -1,0 +1,35 @@
+version: "3.7"
+services:
+  customer:
+    container_name: customer-api
+    env_file:
+      - .env
+    build: .
+    ports:
+      - '8080:8080'
+
+  flyway:
+    container_name: flyway
+    image: flyway/flyway
+    volumes:
+      - .:/flyway/postgres
+    environment:
+      - FLYWAY_USER=${POSTGRES_USER}
+      - FLYWAY_PASSWORD=${POSTGRES_PASSWORD}
+      - FLYWAY_URL=jdbc:postgresql://postgres:${POSTGRES_PORT}/${POSTGRES_DB}
+      - FLYWAY_GROUP=true
+      - FLYWAY_SCHEMAS=flyway,${POSTGRES_SCHEMA}
+    command: -locations=filesystem:/flyway/sql -connectRetries=60 migrate
+    depends_on:
+      - postgres
+
+  postgres:
+    container_name: postgres
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
